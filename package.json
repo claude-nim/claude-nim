@@ -1,0 +1,156 @@
+{
+  "name": "claude-nim",
+  "displayName": "Claude Code NIM Proxy Server",
+  "description": "Use NVIDIA NIM models (DeepSeek, Llama, Qwen, Mistral, 100+) with Claude Code. Translates Anthropic API to OpenAI-compatible format.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": {
+    "name": "Rithika Liyanage",
+    "url": "https://github.com/k-rithik04"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/claude-nim/claude-nim"
+  },
+  "homepage": "https://github.com/claude-nim/claude-nim",
+  "bugs": {
+    "url": "https://github.com/claude-nim/claude-nim/issues"
+  },
+  "publisher": "k-rithik04",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#1A1A2E",
+    "theme": "dark"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "proxy",
+    "nvidia",
+    "nim",
+    "vscode",
+    "deepseek",
+    "llama",
+    "qwen",
+    "mistral",
+    "ai",
+    "llm"
+  ],
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "nvidia-nim.manage",
+        "title": "Manage NVIDIA NIM API Key",
+        "category": "Claude NIM Proxy"
+      },
+      {
+        "command": "nvidia-nim.toggleDebugLogging",
+        "title": "Toggle Debug Logging",
+        "category": "Claude NIM Proxy"
+      },
+      {
+        "command": "nvidia-nim.openDebugLog",
+        "title": "Open Debug Log",
+        "category": "Claude NIM Proxy"
+      },
+      {
+        "command": "nvidia-nim.toggleProxy",
+        "title": "Toggle Proxy Server",
+        "category": "Claude NIM Proxy"
+      },
+      {
+        "command": "nvidia-nim.launchClaudeCode",
+        "title": "Launch Claude Code with Proxy",
+        "category": "Claude NIM Proxy"
+      },
+      {
+        "command": "nvidia-nim.selectDefaultModel",
+        "title": "Select Default Model",
+        "category": "Claude NIM Proxy"
+      },
+      {
+        "command": "nvidia-nim.toggleShowReasoning",
+        "title": "Toggle Show Reasoning",
+        "category": "Claude NIM Proxy"
+      }
+    ],
+    "configuration": {
+      "title": "Claude NIM Proxy",
+      "properties": {
+        "nvidia-nim.proxyPort": {
+          "type": "number",
+          "default": 3456,
+          "description": "Port used for the Claude Code proxy server."
+        },
+        "nvidia-nim.defaultModel": {
+          "type": "string",
+          "default": "",
+          "description": "Default model to use when not specified in the request. Leave empty to require model in each request."
+        },
+        "nvidia-nim.modelsCacheTTL": {
+          "type": "number",
+          "default": 5,
+          "description": "Time in minutes to cache the /v1/models response."
+        },
+        "nvidia-nim.requestTimeout": {
+          "type": "number",
+          "default": 120,
+          "description": "Time in seconds before an idle stream or pending request times out."
+        }
+      }
+    }
+  },
+  "files": [
+    "out",
+    "README.md",
+    "package.json"
+  ],
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "precompile": "node scripts/inline-assets.js",
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint src/ tests/ --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "package:vsix": "npm run compile && vsce package --allow-missing-repository",
+    "build:exe:win": "bun build ./src/cli.ts --compile --target=bun-windows-x64 --outfile claude-nim.exe",
+    "build:exe:linux": "bun build ./src/cli.ts --compile --target=bun-linux-x64 --outfile claude-nim",
+    "build:exe:mac": "bun build ./src/cli.ts --compile --target=bun-darwin-x64 --outfile claude-nim-mac",
+    "build:exe:all": "npm run build:exe:win && npm run build:exe:linux && npm run build:exe:mac"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.0.0",
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^3.9.0",
+    "eslint": "^10.2.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "jest": "^29.0.0",
+    "jest-util": "^29.7.0",
+    "prettier": "^3.8.3",
+    "ts-jest": "^29.0.0",
+    "tsx": "^4.22.4",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.58.2"
+  },
+  "dependencies": {
+    "jsonrepair": "^3.14.0"
+  },
+  "bin": {
+    "claude-nim": "./out/cli.js"
+  }
+}

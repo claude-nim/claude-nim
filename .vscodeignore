@@ -1,0 +1,17 @@
+.git/
+.github/
+.vscode/
+.vscode-test/
+docs/
+src/
+tests/
+images/icon.svg
+eslint.config.js
+jest.config.js
+tsconfig.json
+*.ts
+*.map
+node_modules/
+*.vsix
+.gitignore
+package-lock.json

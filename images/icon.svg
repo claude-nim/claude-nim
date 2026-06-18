@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="glow" cx="40%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#ff6b35" stop-opacity="0.9"/>
+      <stop offset="60%" stop-color="#ff4500" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#1a1a2e" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="server-face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a6fa5"/>
+      <stop offset="100%" stop-color="#2d4a7a"/>
+    </linearGradient>
+    <linearGradient id="server-side" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3a5a8a"/>
+      <stop offset="100%" stop-color="#1e3455"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="64" fill="#1a1a2e"/>
+
+  <!-- Sunburst glow -->
+  <circle cx="200" cy="220" r="200" fill="url(#glow)"/>
+
+  <!-- Sunburst rays -->
+  <g fill="#ff6b35" opacity="0.85">
+    <polygon points="200,220 170,40 195,40"/>
+    <polygon points="200,220 120,65 150,55"/>
+    <polygon points="200,220 75,110 110,100"/>
+    <polygon points="200,220 50,175 85,165"/>
+    <polygon points="200,220 45,250 80,240"/>
+    <polygon points="200,220 65,320 95,305"/>
+    <polygon points="200,220 110,375 135,355"/>
+    <polygon points="200,220 175,410 190,385"/>
+    <polygon points="200,220 255,400 240,375"/>
+    <polygon points="200,220 310,355 290,335"/>
+    <polygon points="200,220 345,290 320,275"/>
+    <polygon points="200,220 350,215 325,210"/>
+  </g>
+
+  <!-- Server rack -->
+  <g transform="translate(250, 140)">
+    <!-- Server unit 1 -->
+    <rect x="0" y="0" width="180" height="55" rx="4" fill="url(#server-face)" stroke="#5a8abf" stroke-width="1.5"/>
+    <rect x="180" y="4" width="24" height="47" rx="2" fill="url(#server-side)"/>
+    <rect x="12" y="12" width="70" height="30" rx="3" fill="#1a1a2e" opacity="0.6"/>
+    <rect x="95" y="15" width="8" height="8" rx="2" fill="#4ae"/>
+    <rect x="108" y="15" width="8" height="8" rx="2" fill="#4a4"/>
+    <rect x="121" y="15" width="8" height="8" rx="2" fill="#4a4"/>
+    <rect x="140" y="12" width="6" height="30" rx="1" fill="#5a8abf" opacity="0.5"/>
+
+    <!-- Server unit 2 -->
+    <rect x="0" y="65" width="180" height="55" rx="4" fill="url(#server-face)" stroke="#5a8abf" stroke-width="1.5"/>
+    <rect x="180" y="69" width="24" height="47" rx="2" fill="url(#server-side)"/>
+    <rect x="12" y="77" width="70" height="30" rx="3" fill="#1a1a2e" opacity="0.6"/>
+    <rect x="95" y="80" width="8" height="8" rx="2" fill="#4ae"/>
+    <rect x="108" y="80" width="8" height="8" rx="2" fill="#4a4"/>
+    <rect x="121" y="80" width="8" height="8" rx="2" fill="#4a4"/>
+    <rect x="140" y="77" width="6" height="30" rx="1" fill="#5a8abf" opacity="0.5"/>
+
+    <!-- Server unit 3 -->
+    <rect x="0" y="130" width="180" height="55" rx="4" fill="url(#server-face)" stroke="#5a8abf" stroke-width="1.5"/>
+    <rect x="180" y="134" width="24" height="47" rx="2" fill="url(#server-side)"/>
+    <rect x="12" y="142" width="70" height="30" rx="3" fill="#1a1a2e" opacity="0.6"/>
+    <rect x="95" y="145" width="8" height="8" rx="2" fill="#4ae"/>
+    <rect x="108" y="145" width="8" height="8" rx="2" fill="#4a4"/>
+    <rect x="121" y="145" width="8" height="8" rx="2" fill="#4a4"/>
+    <rect x="140" y="142" width="6" height="30" rx="1" fill="#5a8abf" opacity="0.5"/>
+
+    <!-- Server unit 4 -->
+    <rect x="0" y="195" width="180" height="55" rx="4" fill="url(#server-face)" stroke="#5a8abf" stroke-width="1.5"/>
+    <rect x="180" y="199" width="24" height="47" rx="2" fill="url(#server-side)"/>
+    <rect x="12" y="207" width="70" height="30" rx="3" fill="#1a1a2e" opacity="0.6"/>
+    <rect x="95" y="210" width="8" height="8" rx="2" fill="#4ae"/>
+    <rect x="108" y="210" width="8" height="8" rx="2" fill="#4a4"/>
+    <rect x="121" y="210" width="8" height="8" rx="2" fill="#4a4"/>
+    <rect x="140" y="207" width="6" height="30" rx="1" fill="#5a8abf" opacity="0.5"/>
+  </g>
+</svg>

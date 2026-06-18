@@ -296,12 +296,64 @@ Description:
   const port = await findAvailablePort(cliPort);
   console.log(`🚀 Starting proxy server on local port ${port}...`);
 
-  // 4. Start Server — default to a known working NIM model
-  const resolvedModel = model || "deepseek-ai/deepseek-r1";
-  if (!model) {
-    console.log(`  No model specified, defaulting to ${resolvedModel}`);
-    console.log(`  Use --model <name> to choose a different model\n`);
+  // 4. Start Server — interactive model picker if no --model
+  let resolvedModel = model;
+  if (!resolvedModel) {
+    console.log("  Fetching available NIM models...\n");
+    try {
+      const rawModels = await fetchModels(apiKey);
+      if (rawModels && rawModels.length > 0) {
+        const models = normalizeNvidiaModels(rawModels);
+        const popular = models.filter(
+          (m) =>
+            m.id.includes("deepseek") ||
+            m.id.includes("llama") ||
+            m.id.includes("mistral") ||
+            m.id.includes("qwen") ||
+            m.id.includes("nemotron") ||
+            m.id.includes("gemma") ||
+            m.id.includes("phi") ||
+            m.id.includes("kimi"),
+        );
+        const display = popular.length > 0 ? popular : models.slice(0, 20);
+
+        console.log("  Available models:\n");
+        display.forEach((m, i) => {
+          const num = String(i + 1).padStart(2, " ");
+          console.log("    " + num + ". " + m.displayName.padEnd(30) + " " + m.id);
+        });
+        console.log("    " + String(display.length + 1).padStart(2, " ") + ". Type a custom model ID\n");
+
+        const choice = await promptForInput(
+          "  Select a model [1-" + (display.length + 1) + "] (default: 1): ",
+          false,
+        );
+
+        const idx = parseInt(choice, 10) - 1;
+        if (!isNaN(idx) && idx >= 0 && idx < display.length) {
+          resolvedModel = display[idx].id;
+        } else if (choice && !isNaN(parseInt(choice, 10))) {
+          // Out of range — treat as custom
+          resolvedModel = choice;
+        } else if (choice && !/^\d+$/.test(choice.trim())) {
+          // User typed a model name directly
+          resolvedModel = choice.trim();
+        } else {
+          resolvedModel = display[0].id;
+        }
+        console.log("\n  -> Selected: " + resolvedModel + "\n");
+      } else {
+        resolvedModel = "deepseek-ai/deepseek-r1";
+        console.log("  Could not fetch models, defaulting to " + resolvedModel + "\n");
+      }
+    } catch {
+      resolvedModel = "deepseek-ai/deepseek-r1";
+      console.log("  Could not fetch models, defaulting to " + resolvedModel + "\n");
+    }
+  } else {
+    console.log("  Using model: " + model);
   }
+  console.log();
   try {
     startProxyServer(port, apiKey, resolvedModel);
   } catch (err) {

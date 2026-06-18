@@ -26,7 +26,7 @@ var allModels = [];
 var fetchRetryCount = 0;
 var MAX_RETRIES = 2;
 var NIM_API = "https://integrate.api.nvidia.com/v1/models";
-var SCRIPT_BASE = "https://raw.githubusercontent.com/claude-nim/claude-nim/main";
+var SCRIPT_BASE = "https://raw.githubusercontent.com/claude-server/claude-nim/main";
 
 /// Complete NIM model list — sourced from live API, updated June 2026
 // 110+ models across all providers. Auto-refreshed by proxy when online.

@@ -21,4 +21,4 @@ npx --yes claude-nim
 
 ### Links
 - [npm](https://www.npmjs.com/package/claude-nim)
-- [GitHub](https://github.com/claude-nim/claude-nim)
+- [GitHub](https://github.com/claude-server/claude-nim)

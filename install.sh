@@ -5,7 +5,7 @@
 # Claude-NIM Proxy — Universal Installer
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/claude-nim/claude-nim/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/claude-server/claude-nim/main/install.sh | bash
 #
 # Options:
 #   --binary    Force install from standalone binary instead of NPM/Bun
@@ -86,7 +86,7 @@ elif [[ "$INSTALL_METHOD" == "binary" ]]; then
     esac
     
     TARGET_BIN="$BIN_DIR/claude-nim"
-    DOWNLOAD_URL="https://github.com/claude-nim/claude-nim/releases/latest/download/$BIN_NAME"
+    DOWNLOAD_URL="https://github.com/claude-server/claude-nim/releases/latest/download/$BIN_NAME"
     
     echo -e "${DIM}  Downloading standalone binary...${RESET}"
     if ! curl -fsSL "$DOWNLOAD_URL" -o "$TARGET_BIN"; then

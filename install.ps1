@@ -15,7 +15,7 @@ installation method (Bun > Node > Standalone Binary).
 
 .EXAMPLE
   # Default — auto-detect, prefer NPM/Bun
-  iex (irm https://raw.githubusercontent.com/claude-nim/claude-nim/main/install.ps1)
+  iex (irm https://raw.githubusercontent.com/claude-server/claude-nim/main/install.ps1)
 
 .EXAMPLE
   # Force Standalone Binary download
@@ -76,7 +76,7 @@ if ($installMethod -eq "bun") {
     }
     
     $exePath = Join-Path $binDir "claude-nim.exe"
-    $downloadUrl = "https://github.com/claude-nim/claude-nim/releases/latest/download/claude-nim.exe"
+    $downloadUrl = "https://github.com/claude-server/claude-nim/releases/latest/download/claude-nim.exe"
     
     Write-Host "  Downloading standalone binary..." -ForegroundColor DarkGray
     try {

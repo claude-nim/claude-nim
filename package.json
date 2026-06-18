@@ -10,11 +10,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/claude-nim/claude-nim"
+    "url": "https://github.com/claude-server/claude-nim"
   },
-  "homepage": "https://github.com/claude-nim/claude-nim",
+  "homepage": "https://github.com/claude-server/claude-nim",
   "bugs": {
-    "url": "https://github.com/claude-nim/claude-nim/issues"
+    "url": "https://github.com/claude-server/claude-nim/issues"
   },
   "publisher": "k-rithik04",
   "icon": "images/icon.png",

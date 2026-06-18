@@ -13,7 +13,7 @@
 [![VS Code](https://img.shields.io/badge/VS%20Code-1.80+-blue)](https://code.visualstudio.com/)
 [![npm version](https://img.shields.io/npm/v/claude-nim)](https://www.npmjs.com/package/claude-nim)
 [![npm downloads](https://img.shields.io/npm/dm/claude-nim)](https://www.npmjs.com/package/claude-nim)
-[![GitHub](https://img.shields.io/badge/GitHub-claude--nim-181717)](https://github.com/claude-nim/claude-nim)
+[![GitHub](https://img.shields.io/badge/GitHub-claude--nim-181717)](https://github.com/claude-server/claude-nim)
 
 A VS Code extension that lets you use **NVIDIA NIM models** with **Claude Code** (and any Anthropic Messages API client).
 
@@ -284,7 +284,7 @@ npm run package:vsix  # Package as .vsix
 
 ## Contributing
 
-Contributions are welcome. Please open an issue or submit a pull request at [github.com/claude-nim/claude-nim](https://github.com/claude-nim/claude-nim).
+Contributions are welcome. Please open an issue or submit a pull request at [github.com/claude-server/claude-nim](https://github.com/claude-server/claude-nim).
 
 ## License
 

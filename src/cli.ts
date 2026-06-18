@@ -146,7 +146,7 @@ async function getOrPromptApiKey(cliArgKey?: string): Promise<string> {
 
   console.log("No NVIDIA NIM API key found.");
   console.log("Get your key securely from: https://build.nvidia.com/");
-  const answer = await promptForInput("Enter your NVIDIA NIM API key: ", true);
+  const answer = await promptForInput("Enter your NVIDIA NIM API key: ", false);
 
   if (!answer) {
     console.error("❌ API key is required to start.");

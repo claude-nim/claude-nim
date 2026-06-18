@@ -11,7 +11,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![VS Code](https://img.shields.io/badge/VS%20Code-1.80+-blue.svg)](https://code.visualstudio.com/)
-[![npm](https://img.shields.io/badge/npm-claude--nim-red.svg)](https://www.npmjs.com/package/claude-nim)
+[![npm version](https://img.shields.io/npm/v/claude-nim.svg)](https://www.npmjs.com/package/claude-nim)
+[![npm downloads](https://img.shields.io/npm/dm/claude-nim.svg)](https://www.npmjs.com/package/claude-nim)
 [![GitHub](https://img.shields.io/badge/GitHub-claude--nim-181717.svg)](https://github.com/claude-nim/claude-nim)
 
 A VS Code extension that lets you use **NVIDIA NIM models** with **Claude Code** (and any Anthropic Messages API client).
@@ -33,12 +34,12 @@ Claude Code  ──→  Claude-NIM Proxy  ──→  NVIDIA NIM API
 ## Quick Start
 
 ```bash
-# VS Code extension
-npm install -g @anthropic-ai/claude-code   # or install from marketplace
-# Then install this extension and set your API key via the command palette
+# One command — installs, configures, and launches
+npx --yes claude-nim
 
-# Standalone CLI (no VS Code required)
-npx claude-nim --port 3456 --api-key nvapi-xxx
+# Or install globally first
+npm install -g claude-nim
+claude-nim
 ```
 
 ## Why Claude-NIM Proxy?

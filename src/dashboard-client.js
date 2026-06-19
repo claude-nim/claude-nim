@@ -409,6 +409,7 @@ function connectSSE() {
     sseRetryTimer = null;
   }
 
+  var connectionTime = Date.now();
   var es = new EventSource(API + "/api/metrics");
 
   es.onopen = () => {
@@ -430,17 +431,22 @@ function connectSSE() {
       metrics.push(m);
       addRow(m);
       updateStats();
-      pulse(m.stream ? "conn-right" : "conn-left");
-      var cls = m.status === "success" ? "ok" : "err";
-      addLog(
-        (m.stream ? "&#8594; " : "&#8592; ") +
-          m.model +
-          " " +
-          fmtNum(m.inputTokens + m.outputTokens) +
-          " tok " +
-          fmtMs(m.latencyMs),
-        cls,
-      );
+
+      // Only show pulse animation and add console logs for live new requests (not history)
+      var isHistorical = m.timestamp && (m.timestamp < connectionTime - 2000);
+      if (!isHistorical) {
+        pulse(m.stream ? "conn-right" : "conn-left");
+        var cls = m.status === "success" ? "ok" : "err";
+        addLog(
+          "&larr; " +
+            m.model +
+            " " +
+            fmtNum(m.inputTokens + m.outputTokens) +
+            " tok " +
+            fmtMs(m.latencyMs),
+          cls,
+        );
+      }
     } catch {}
   };
 

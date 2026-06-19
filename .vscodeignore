@@ -15,3 +15,6 @@ node_modules/
 *.vsix
 .gitignore
 package-lock.json
+.env
+.env.*
+

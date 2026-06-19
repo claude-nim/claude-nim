@@ -51,7 +51,6 @@ let activeDefaultModel: string | undefined = undefined;
 // ============================================================================
 
 const FALLBACK_MODEL_IDS = [
-  "deepseek-ai/deepseek-r1",
   "deepseek-ai/deepseek-v4-flash",
   "deepseek-ai/deepseek-v4-pro",
   "meta/llama-3.3-70b-instruct",
@@ -117,12 +116,12 @@ function rewriteClaudeSettingsModel(nimModelId: string): void {
 
     // Only rewrite if the model is "NVIDIA-NIM-Proxy" (our provider name)
     // — replace it with the actual NIM model ID so Claude Code can validate it.
-    if (settings.model === "NVIDIA-NIM-Proxy" || !settings.model) {
+    if (settings.model !== nimModelId) {
       settings.model = nimModelId;
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), "utf8");
       debugLog(
         "proxy",
-        `Rewrote .claude/settings.json model: "NVIDIA-NIM-Proxy" → "${nimModelId}"`,
+        `Rewrote .claude/settings.json model: → "${nimModelId}"`,
       );
     }
   } catch {

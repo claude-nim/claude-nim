@@ -115,7 +115,9 @@
     "precompile": "node scripts/inline-assets.js",
     "compile": "tsc -p ./",
     "watch": "tsc -w -p ./",
-    "test": "jest",
+    "test": "jest --testPathIgnorePatterns=integration",
+    "test:integration": "jest tests/integration.test.ts",
+    "test:all": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src/ tests/",
     "lint:fix": "eslint src/ tests/ --fix",
@@ -143,6 +145,7 @@
     "typescript-eslint": "^8.58.2"
   },
   "dependencies": {
+    "dotenv": "^17.4.2",
     "jsonrepair": "^3.14.0"
   },
   "bin": {

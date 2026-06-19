@@ -332,11 +332,11 @@ Description:
         }
         console.log("\n  -> Selected: " + resolvedModel + "\n");
       } else {
-        resolvedModel = "deepseek-ai/deepseek-r1";
+        resolvedModel = "deepseek-ai/deepseek-v4-flash";
         console.log("  Could not fetch models, defaulting to " + resolvedModel + "\n");
       }
     } catch {
-      resolvedModel = "deepseek-ai/deepseek-r1";
+      resolvedModel = "deepseek-ai/deepseek-v4-flash";
       console.log("  Could not fetch models, defaulting to " + resolvedModel + "\n");
     }
   } else {

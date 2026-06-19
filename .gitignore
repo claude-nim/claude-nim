@@ -3,3 +3,6 @@ out/
 dist/
 *.js.map
 *.vsix
+.env
+test-*.js
+test-tty.js

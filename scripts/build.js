@@ -70,12 +70,19 @@ async function main() {
     banner: { js: CLI_VSCODE_MOCK + CLI_BUN_DETECT },
   };
 
+  const swConfig = {
+    ...shared,
+    entryPoints: ["src/cli/sw.ts"],
+    outfile: `${OUT_DIR}/sw.js`,
+  };
+
   if (isWatch) {
-    const [extCtx, cliCtx] = await Promise.all([
+    const [extCtx, cliCtx, swCtx] = await Promise.all([
       context(extensionConfig),
       context(cliConfig),
+      context(swConfig),
     ]);
-    await Promise.all([extCtx.watch(), cliCtx.watch()]);
+    await Promise.all([extCtx.watch(), cliCtx.watch(), swCtx.watch()]);
     console.log("Watching for changes...");
     return;
   }
@@ -83,11 +90,14 @@ async function main() {
   const results = await Promise.allSettled([
     build(extensionConfig),
     build(cliConfig),
+    build(swConfig),
   ]);
 
   const failures = results
     .map((r, i) =>
-      r.status === "rejected" ? `${["extension", "cli"][i]}: ${r.reason}` : null,
+      r.status === "rejected"
+        ? `${["extension", "cli", "sw"][i]}: ${r.reason}`
+        : null,
     )
     .filter(Boolean);
 
@@ -97,7 +107,7 @@ async function main() {
   }
 
   // Report bundle sizes
-  for (const name of ["extension", "cli"]) {
+  for (const name of ["extension", "cli", "sw"]) {
     const size = statSync(`${OUT_DIR}/${name}.js`).size;
     const kb = (size / 1024).toFixed(1);
     console.log(`${name}.js: ${kb} KB`);

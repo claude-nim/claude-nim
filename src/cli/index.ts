@@ -511,6 +511,26 @@ async function runStartFlow(
   console.log(`\n  ${accent.bold("Dashboard:")} ${chalk.dim(dashboardUrl)}`);
   console.log(`  ${accent.bold("Model:")} ${chalk.dim(resolvedModel)}`);
   console.log();
+
+  // Ensure Claude Code is installed before trying to launch it
+  if (!isClaudeInstalled()) {
+    console.warn("  Claude Code CLI is not installed.");
+    console.log("  Installing @anthropic-ai/claude-code...");
+    try {
+      child_process.execSync("bun install -g @anthropic-ai/claude-code", {
+        stdio: "inherit",
+      });
+      console.log("  Claude Code installed successfully.\n");
+    } catch {
+      console.error(
+        "\n  Failed to install Claude Code. Please install it manually:",
+      );
+      console.error("  bun install -g @anthropic-ai/claude-code\n");
+      cleanupAndExit(1);
+      return;
+    }
+  }
+
   console.log(accent.bold("  Launching Claude Code terminal...\n"));
 
   const envOptions = { ...process.env };

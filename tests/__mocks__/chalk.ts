@@ -3,7 +3,6 @@ function passthrough(s: string): string {
   return s;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const chalkProxy: any = new Proxy(passthrough, {
   get: (_target, prop) => {
     if (prop === "hex") return (_color: string) => passthrough;

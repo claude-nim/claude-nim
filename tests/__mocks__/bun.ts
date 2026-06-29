@@ -11,7 +11,6 @@ const mockServe = {
   development: false,
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).Bun = {
   serve: (opts: Record<string, unknown>) => {
     if (typeof opts?.fetch === "function" && opts?.port) {
@@ -114,5 +113,4 @@ const mockServe = {
     tail: () => {},
   },
   inspect: () => "",
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 } as any;

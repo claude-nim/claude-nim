@@ -33,4 +33,17 @@ module.exports = tsPlugin.config(
       eqeqeq: ["error", "always", { null: "ignore" }],
     },
   },
+  {
+    files: ["src/cli/**/*", "src/extension/output-channel.ts"],
+    rules: {
+      "no-console": "off",
+    },
+  },
+  {
+    files: ["tests/**/*"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "no-console": "off",
+    },
+  },
 );

@@ -46,7 +46,17 @@ function findBun(): string | null {
     const which = process.platform === "win32" ? "where" : "which";
     return execSync(`${which} bun`, { encoding: "utf8" }).trim().split("\n")[0];
   } catch {
-    return null; // will fall back to node — CLI banner auto-re-execs with bun
+    return null;
+  }
+}
+
+function isClaudeInstalled(): boolean {
+  try {
+    const which = process.platform === "win32" ? "where" : "which";
+    execSync(`${which} claude`, { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -122,12 +132,23 @@ function startBunProxy(
       args.push("--model", defaultModel);
     }
 
-    // If bun not found, fall back to node — the CLI banner auto-re-execs with bun
-    const execPath = bunPath || process.execPath;
+    let spawnArgs: string[];
+    let spawnExec: string;
 
-    debugLog("proxy", `Spawning: ${execPath} ${args.join(" ")}`);
+    if (bunPath) {
+      // Bun found — run CLI directly under Bun
+      spawnExec = bunPath;
+      spawnArgs = args;
+    } else {
+      // Bun not found — run through sw.ts wrapper which auto-installs Bun
+      const swPath = path.join(_context!.extensionPath, "out", "sw.js");
+      spawnExec = process.execPath; // Node.js
+      spawnArgs = [swPath, ...args];
+    }
 
-    _bunProcess = spawn(execPath, args, {
+    debugLog("proxy", `Spawning: ${spawnExec} ${spawnArgs.join(" ")}`);
+
+    _bunProcess = spawn(spawnExec, spawnArgs, {
       stdio: ["ignore", "pipe", "pipe"],
     });
     _proxyPort = port;
@@ -334,6 +355,9 @@ export async function activate(context: vscode.ExtensionContext) {
   _statusBar = new StatusBarManager();
   context.subscriptions.push(_statusBar);
 
+  // Install CLI globally on activation (background, non-blocking)
+  void ensureCliInstalled(context.extensionPath);
+
   // Register all commands — they trigger lazy init on first use
   context.subscriptions.push(
     vscode.commands.registerCommand(MANAGE_COMMAND_ID, async () => {
@@ -435,6 +459,37 @@ export async function activate(context: vscode.ExtensionContext) {
       await ensureLazyInit();
       if (!isProxyRunning()) {
         await tryStartProxy(context, true);
+      }
+
+      // Ensure Claude Code CLI is installed
+      if (!isClaudeInstalled()) {
+        const install = await vscode.window.showWarningMessage(
+          "Claude Code CLI is not installed. Install it now?",
+          "Install",
+          "Cancel",
+        );
+        if (install === "Install") {
+          try {
+            await new Promise<void>((res, rej) => {
+              exec(
+                "bun install -g @anthropic-ai/claude-code",
+                { timeout: 120_000 },
+                (err: Error | null) => {
+                  if (err) rej(err);
+                  else res();
+                },
+              );
+            });
+            vscode.window.showInformationMessage("Claude Code installed.");
+          } catch {
+            vscode.window.showErrorMessage(
+              "Failed to install Claude Code. Run: bun install -g @anthropic-ai/claude-code",
+            );
+            return;
+          }
+        } else {
+          return;
+        }
       }
 
       const apiKey = await context.secrets.get(SECRET_STORAGE_KEY);

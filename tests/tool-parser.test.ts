@@ -5,8 +5,6 @@ import {
   unwrapJsonCodeFence,
 } from "../src/translator/tool-parser";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 describe("parseTextEmbeddedToolCalls", () => {
   describe("OpenAI format (<|tool_call_begin|>)", () => {
     it("should parse a single tool call", () => {

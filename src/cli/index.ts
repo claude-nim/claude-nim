@@ -128,6 +128,19 @@ function clearApiKey(): void {
   }
 }
 
+function getGitHubToken(): string | null {
+  try {
+    const token = execSync("gh auth token", {
+      encoding: "utf8",
+      timeout: 5000,
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+    return token || null;
+  } catch {
+    return null;
+  }
+}
+
 // ============================================================================
 // 3. Prompt Helpers (raw mode, ESC = cancel/back)
 // ============================================================================
@@ -700,7 +713,7 @@ Options:
         process.exit(1);
       }
 
-      void registerInstallation(apiKey);
+      void registerInstallation(getGitHubToken() || undefined);
 
       await runStartFlow(apiKey, port, resolvedModel);
       return;
@@ -731,7 +744,6 @@ Options:
 
     if (choice === "Send a message") {
       clearScreen();
-      const apiKey = await getOrPromptApiKey(cliApiKey);
 
       // ── heading ──
       const sep = accent("\u2501".repeat(44));
@@ -748,7 +760,8 @@ Options:
       const pkg = JSON.parse(
         fs.readFileSync(path.join(__dirname, "..", "package.json"), "utf8"),
       );
-      void registerInstallation(apiKey);
+      const ghToken = getGitHubToken();
+      void registerInstallation(ghToken || undefined);
       const updateMsg = await checkForUpdates(pkg.version);
       if (updateMsg) console.log(updateMsg);
 
@@ -766,7 +779,7 @@ Options:
       );
 
       if (message) {
-        const sent = await sendCreatorMessage(message, apiKey);
+        const sent = await sendCreatorMessage(message, ghToken || undefined);
         if (sent) {
           console.log(
             `  ${chalk.green("\u2713")} ${chalk.dim("Message sent anonymously.")}`,

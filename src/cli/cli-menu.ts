@@ -167,7 +167,12 @@ const HELP_LINE = chalk.dim(
 
 // ─── Main menu ────────────────────────────────────────────────────────────────
 
-export type MainMenuValue = "Start" | "Model" | "API" | "Send a message" | "Exit";
+export type MainMenuValue =
+  | "Start"
+  | "Model"
+  | "API"
+  | "Send a message"
+  | "Exit";
 
 interface MainMenuItem {
   label: string;

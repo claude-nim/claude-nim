@@ -1,21 +1,31 @@
-const fs = require('node:fs');
-const path = require('node:path');
+const { readFileSync, writeFileSync, existsSync } = require("fs");
+const { join } = require("path");
 
-const srcDir = path.join(__dirname, '..', 'src');
-const htmlPath = path.join(srcDir, 'dashboard.html');
-const jsPath = path.join(srcDir, 'dashboard-client.js');
-const outPath = path.join(srcDir, 'dashboard-assets.ts');
+const ROOT = join(__dirname, "..");
+const src = (p) => join(ROOT, p);
 
-const htmlContent = fs.readFileSync(htmlPath, 'utf8');
-const jsContent = fs.readFileSync(jsPath, 'utf8');
+const files = {
+  html: src("src/dashboard/dashboard.html"),
+  js: src("src/dashboard/dashboard-client.js"),
+};
 
-const tsContent = `// AUTO-GENERATED FILE. DO NOT EDIT DIRECTLY.
+for (const [key, path] of Object.entries(files)) {
+  if (!existsSync(path)) {
+    console.error(`Missing ${key} source: ${path}`);
+    process.exit(1);
+  }
+}
+
+const html = readFileSync(files.html, "utf8");
+const js = readFileSync(files.js, "utf8");
+
+const output = `// AUTO-GENERATED FILE. DO NOT EDIT DIRECTLY.
 // Run 'npm run precompile' to rebuild.
 
-export const DASHBOARD_HTML = ${JSON.stringify(htmlContent)};
+export const DASHBOARD_HTML = ${JSON.stringify(html)};
 
-export const DASHBOARD_JS = ${JSON.stringify(jsContent)};
+export const DASHBOARD_JS = ${JSON.stringify(js)};
 `;
 
-fs.writeFileSync(outPath, tsContent);
-console.log('Successfully inlined dashboard assets into src/dashboard-assets.ts');
+writeFileSync(src("src/dashboard/dashboard-assets.ts"), output);
+console.log("Inlined dashboard assets → src/dashboard/dashboard-assets.ts");

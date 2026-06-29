@@ -43,6 +43,32 @@ export class ThemeColor {
   constructor(public id: string) {}
 }
 
-export const ExtensionContext = {};
+export class ExtensionContext {
+  subscriptions: { dispose: () => void }[] = [];
+  extensionPath = "/mock/extension/path";
+  extensionUri = { scheme: "file", path: "/mock/extension/path" };
+  secrets = {
+    get: jest.fn().mockResolvedValue(undefined),
+    store: jest.fn().mockResolvedValue(undefined),
+    delete: jest.fn().mockResolvedValue(undefined),
+    onDidChange: jest.fn().mockReturnValue({ dispose: jest.fn() }),
+  };
+  globalState = {
+    get: jest.fn(),
+    update: jest.fn().mockResolvedValue(undefined),
+    keys: jest.fn().mockResolvedValue([]),
+    setKeysForSync: jest.fn(),
+  };
+  workspaceState = {
+    get: jest.fn(),
+    update: jest.fn().mockResolvedValue(undefined),
+    keys: jest.fn().mockResolvedValue([]),
+  };
+  extensionMode = 1;
+  storagePath = "/mock/storage/path";
+  globalStoragePath = "/mock/global-storage/path";
+  logPath = "/mock/log/path";
+  asAbsolutePath = jest.fn((p: string) => `/mock/extension/path/${p}`);
+}
 
 export const ConfigurationTarget = { Global: 1, Workspace: 2 };

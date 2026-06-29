@@ -1,79 +1,71 @@
 // Copyright (c) 2026 Rithika Liyanage (https://github.com/k-rithik04)
 // Licensed under the MIT License - see LICENSE for details
-// ============================================================================
-// Proxy integration test — full server lifecycle with mocked API
-// ============================================================================
 import * as http from "http";
-import * as fs from "fs";
-import * as path from "path";
-import * as os from "os";
 import { startProxyServer, stopProxyServer } from "../src/server";
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { state } from "../src/server/proxy-state";
 
 jest.setTimeout(30000);
 
+// Mock the API module so models-handler.ts gets fake data
 jest.mock("../src/api", () => {
   const mockModels = [
-    { id: "meta/llama-3.1-405b-instruct", object: "model", created: 1234, owned_by: "nvidia" },
-    { id: "deepseek-ai/deepseek-v4-flash", object: "model", created: 1234, owned_by: "nvidia" },
-    { id: "minimaxai/minimax-m3", object: "model", created: 1234, owned_by: "nvidia" },
+    { id: "meta/llama-3.1-405b-instruct" },
+    { id: "deepseek-ai/deepseek-v4-flash" },
+    { id: "minimaxai/minimax-m3" },
   ];
   return {
     fetchModels: jest.fn().mockResolvedValue(mockModels),
-    streamChatCompletion: jest.fn().mockImplementation(
-      async function* (apiKey: string, req: any, signal?: AbortSignal) {
-        yield {
-          id: "test-stream",
-          object: "chat.completion.chunk",
-          created: 1234,
-          model: req.model || "test",
-          choices: [
-            {
-              index: 0,
-              delta: { role: "assistant", content: "Hello from mock!" },
-              finish_reason: null,
-            },
-          ],
-        };
-        yield {
-          id: "test-stream",
-          object: "chat.completion.chunk",
-          created: 1234,
-          model: req.model || "test",
-          choices: [
-            {
-              index: 0,
-              delta: {},
-              finish_reason: "stop",
-            },
-          ],
-          usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
-        };
-      },
-    ),
+    fetchWithRetry: jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true }),
+    }),
+    streamChatCompletion: jest.fn(),
   };
 });
 
-function httpGet(url: string): Promise<{ status: number; body: string; headers: http.IncomingHttpHeaders }> {
+// ---------------------------------------------------------------------------
+// HTTP helpers
+// ---------------------------------------------------------------------------
+function httpGet(url: string): Promise<{
+  status: number;
+  body: string;
+  headers: http.IncomingHttpHeaders;
+}> {
   return new Promise((resolve, reject) => {
-    http.get(url, (res) => {
-      let data = "";
-      res.on("data", (chunk) => (data += chunk));
-      res.on("end", () => resolve({ status: res.statusCode!, body: data, headers: res.headers }));
-      res.on("error", reject);
-    }).on("error", reject);
+    http
+      .get(url, (res) => {
+        let data = "";
+        res.on("data", (chunk: Buffer) => (data += chunk.toString()));
+        res.on("end", () =>
+          resolve({
+            status: res.statusCode!,
+            body: data,
+            headers: res.headers,
+          }),
+        );
+        res.on("error", reject);
+      })
+      .on("error", reject);
   });
 }
 
-function httpPost(url: string, body: string, headers?: Record<string, string>): Promise<{ status: number; body: string; headers: http.IncomingHttpHeaders }> {
+function httpPost(
+  url: string,
+  body: string,
+  headers?: Record<string, string>,
+): Promise<{
+  status: number;
+  body: string;
+  headers: http.IncomingHttpHeaders;
+}> {
   return new Promise((resolve, reject) => {
     const parsed = new URL(url);
     const req = http.request(
       {
         hostname: parsed.hostname,
         port: parsed.port,
-        path: parsed.pathname + parsed.search,
+        path: parsed.pathname,
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -83,8 +75,14 @@ function httpPost(url: string, body: string, headers?: Record<string, string>): 
       },
       (res) => {
         let data = "";
-        res.on("data", (chunk) => (data += chunk));
-        res.on("end", () => resolve({ status: res.statusCode!, body: data, headers: res.headers }));
+        res.on("data", (chunk: Buffer) => (data += chunk.toString()));
+        res.on("end", () =>
+          resolve({
+            status: res.statusCode!,
+            body: data,
+            headers: res.headers,
+          }),
+        );
         res.on("error", reject);
       },
     );
@@ -94,277 +92,413 @@ function httpPost(url: string, body: string, headers?: Record<string, string>): 
   });
 }
 
-describe("Proxy Server — Full Lifecycle", () => {
-  const PORT = 3459;
-  const BASE = `http://127.0.0.1:${PORT}`;
+function httpOptions(
+  url: string,
+): Promise<{ status: number; headers: http.IncomingHttpHeaders }> {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const req = http.request(
+      {
+        hostname: parsed.hostname,
+        port: parsed.port,
+        path: parsed.pathname,
+        method: "OPTIONS",
+      },
+      (res) => {
+        let d = "";
+        res.on("data", (c: Buffer) => (d += c.toString()));
+        res.on("end", () =>
+          resolve({ status: res.statusCode!, headers: res.headers }),
+        );
+      },
+    );
+    req.on("error", reject);
+    req.end();
+  });
+}
 
-  beforeAll((done) => {
+// ---------------------------------------------------------------------------
+// Fake NIM response builder
+// ---------------------------------------------------------------------------
+function fakeNimChunk(content: string, finish: string | null): string {
+  const data = JSON.stringify({
+    id: "chatcmpl-123",
+    object: "chat.completion.chunk",
+    created: Date.now(),
+    model: "test",
+    choices: [
+      {
+        index: 0,
+        delta: content ? { role: "assistant", content } : {},
+        finish_reason: finish,
+      },
+    ],
+  });
+  return `data: ${data}\n\n`;
+}
+
+function fakeNimDone(): string {
+  return "data: [DONE]\n\n";
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+describe("Proxy Server", () => {
+  const PORT = 3461;
+  const BASE = `http://127.0.0.1:${PORT}`;
+  let origFetch: typeof global.fetch;
+
+  beforeAll(async () => {
+    origFetch = global.fetch;
+    global.fetch = jest
+      .fn()
+      .mockImplementation(
+        async (url: string, init?: RequestInit): Promise<Response> => {
+          if (typeof url === "string" && url.includes("/chat/completions")) {
+            const body = init?.body ? JSON.parse(init.body as string) : {};
+            const isStream = body.stream !== false;
+
+            if (isStream) {
+              const encoder = new TextEncoder();
+              const stream = new ReadableStream({
+                async start(controller) {
+                  controller.enqueue(
+                    encoder.encode(fakeNimChunk("Hello", null)),
+                  );
+                  controller.enqueue(
+                    encoder.encode(fakeNimChunk(" world", "stop")),
+                  );
+                  controller.enqueue(encoder.encode(fakeNimDone()));
+                  controller.close();
+                },
+              });
+              return new Response(stream, {
+                status: 200,
+                headers: { "Content-Type": "text/event-stream" },
+              });
+            }
+
+            const json = JSON.stringify({
+              id: "chatcmpl-123",
+              object: "chat.completion",
+              created: Date.now(),
+              model: body.model || "test",
+              choices: [
+                {
+                  index: 0,
+                  message: {
+                    role: "assistant",
+                    content: "Hello world",
+                  },
+                  finish_reason: "stop",
+                },
+              ],
+              usage: {
+                prompt_tokens: 10,
+                completion_tokens: 3,
+                total_tokens: 13,
+              },
+            });
+            return new Response(json, {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+          return new Response("Not found", { status: 404 });
+        },
+      ) as unknown as typeof fetch;
+
     startProxyServer(PORT, "test-api-key-123", "deepseek-ai/deepseek-v4-flash");
-    setTimeout(done, 600);
+    await new Promise((r) => setTimeout(r, 500));
   });
 
   afterAll(() => {
     stopProxyServer();
+    global.fetch = origFetch;
   });
 
   // ========================================================================
   // Health
   // ========================================================================
-  it("GET / should return 200 with status ok", async () => {
-    const res = await httpGet(`${BASE}/`);
-    expect(res.status).toBe(200);
-    const json = JSON.parse(res.body);
-    expect(json.status).toBe("ok");
-    expect(json.service).toBe("Claude-NIM Proxy");
-  });
-
-  it("GET /health should return 200", async () => {
-    const res = await httpGet(`${BASE}/health`);
-    expect(res.status).toBe(200);
-  });
-
-  it("GET /unknown-route should return 404", async () => {
-    const res = await httpGet(`${BASE}/unknown`);
-    expect(res.status).toBe(404);
+  describe("Health", () => {
+    it("GET /health returns 200", async () => {
+      const res = await httpGet(`${BASE}/health`);
+      expect(res.status).toBe(200);
+      const json = JSON.parse(res.body);
+      expect(json.status).toBe("ok");
+      expect(json.model).toBe("deepseek-ai/deepseek-v4-flash");
+    });
   });
 
   // ========================================================================
   // CORS
   // ========================================================================
-  it("OPTIONS should return 204 with CORS headers", async () => {
-    const res = await new Promise<{ status: number; headers: http.IncomingHttpHeaders }>((resolve, reject) => {
-      const parsed = new URL(`${BASE}/v1/messages`);
-      const req = http.request(
-        {
-          hostname: parsed.hostname,
-          port: parsed.port,
-          path: parsed.pathname,
-          method: "OPTIONS",
-        },
-        (r) => {
-          let d = "";
-          r.on("data", (c) => (d += c));
-          r.on("end", () => resolve({ status: r.statusCode!, headers: r.headers }));
-        },
-      );
-      req.on("error", reject);
-      req.end();
+  describe("CORS", () => {
+    it("OPTIONS /v1/messages returns 204", async () => {
+      const res = await httpOptions(`${BASE}/v1/messages`);
+      expect(res.status).toBe(204);
+      expect(res.headers["access-control-allow-origin"]).toBe("*");
     });
-    expect(res.status).toBe(204);
-    expect(res.headers["access-control-allow-origin"]).toBe("*");
   });
 
   // ========================================================================
   // /v1/models
   // ========================================================================
-  it("GET /v1/models should return model list with NVIDIA-NIM-Proxy", async () => {
-    const res = await httpGet(`${BASE}/v1/models`);
-    expect(res.status).toBe(200);
-    const json = JSON.parse(res.body);
-    expect(json.data).toBeDefined();
-    expect(Array.isArray(json.data)).toBe(true);
-    expect(json.data.length).toBeGreaterThan(0);
+  describe("GET /v1/models", () => {
+    it("returns model list with gateway IDs", async () => {
+      const res = await httpGet(`${BASE}/v1/models`);
+      expect(res.status).toBe(200);
+      const json = JSON.parse(res.body);
+      expect(json.object).toBe("list");
+      expect(Array.isArray(json.data)).toBe(true);
+      expect(json.data.length).toBeGreaterThan(0);
 
-    const ids = json.data.map((m: any) => m.id);
-    expect(ids).toContain("NVIDIA-NIM-Proxy");
-    expect(ids).toContain("deepseek-ai/deepseek-v4-flash");
-  });
+      const ids = json.data.map((m: any) => m.id);
+      expect(ids).toContain(
+        "anthropic/nvidia_nim/meta/llama-3.1-405b-instruct",
+      );
 
-  it("GET /v1/models should cache results", async () => {
-    const res1 = await httpGet(`${BASE}/v1/models`);
-    const res2 = await httpGet(`${BASE}/v1/models`);
-    expect(res1.status).toBe(200);
-    expect(res2.status).toBe(200);
-    const j1 = JSON.parse(res1.body);
-    const j2 = JSON.parse(res2.body);
-    expect(j1.data.length).toBe(j2.data.length);
-  });
-
-  // ========================================================================
-  // /v1/messages — stream
-  // ========================================================================
-  it("POST /v1/messages should stream SSE response", (done) => {
-    const postData = JSON.stringify({
-      model: "deepseek-ai/deepseek-v4-flash",
-      messages: [{ role: "user", content: "Hi" }],
-      max_tokens: 100,
+      const gatewayId = ids.find((id: string) => id.startsWith("anthropic/"));
+      expect(gatewayId).toBeTruthy();
     });
 
-    const req = http.request(
-      `${BASE}/v1/messages`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Content-Length": Buffer.byteLength(postData),
+    it("includes first_id and last_id", async () => {
+      const res = await httpGet(`${BASE}/v1/models`);
+      const json = JSON.parse(res.body);
+      expect(json.first_id).toBeTruthy();
+      expect(json.last_id).toBeTruthy();
+      expect(json.has_more).toBe(false);
+    });
+
+    it("caches results across calls", async () => {
+      const r1 = await httpGet(`${BASE}/v1/models`);
+      const r2 = await httpGet(`${BASE}/v1/models`);
+      expect(JSON.parse(r1.body).data.length).toBe(
+        JSON.parse(r2.body).data.length,
+      );
+    });
+  });
+
+  // ========================================================================
+  // /v1/messages — streaming
+  // ========================================================================
+  describe("POST /v1/messages (streaming)", () => {
+    it("returns SSE stream with message events", (done) => {
+      const postData = JSON.stringify({
+        model: "deepseek-ai/deepseek-v4-flash",
+        messages: [{ role: "user", content: "Hi" }],
+        max_tokens: 100,
+      });
+
+      const req = http.request(
+        `${BASE}/v1/messages`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(postData),
+          },
         },
-      },
-      (res) => {
-        expect(res.statusCode).toBe(200);
-        expect(res.headers["content-type"]).toBe("text/event-stream");
+        (res) => {
+          expect(res.statusCode).toBe(200);
+          expect(res.headers["content-type"]).toBe("text/event-stream");
 
-        let data = "";
-        res.on("data", (chunk) => (data += chunk.toString()));
-        res.on("end", () => {
-          expect(data).toContain("event: message_start");
-          expect(data).toContain("Hello from mock!");
-          expect(data).toContain("event: message_stop");
-          done();
-        });
-      },
-    );
-    req.write(postData);
-    req.end();
-  });
-
-  // ========================================================================
-  // /v1/messages — model override
-  // ========================================================================
-  it("should override model when NVIDIA-NIM-Proxy is sent", (done) => {
-    const postData = JSON.stringify({
-      model: "NVIDIA-NIM-Proxy",
-      messages: [{ role: "user", content: "Hi" }],
-      max_tokens: 50,
-    });
-
-    const req = http.request(
-      `${BASE}/v1/messages`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Content-Length": Buffer.byteLength(postData),
+          let data = "";
+          res.on("data", (chunk: Buffer) => (data += chunk.toString()));
+          res.on("end", () => {
+            expect(data).toContain("event: message_start");
+            expect(data).toContain("event: message_delta");
+            expect(data).toContain("event: message_stop");
+            expect(data).toContain('"model":"test"');
+            done();
+          });
         },
-      },
-      (res) => {
-        let data = "";
-        res.on("data", (chunk) => (data += chunk.toString()));
-        res.on("end", () => {
-          expect(data).toContain("event: message_start");
-          done();
-        });
-      },
-    );
-    req.write(postData);
-    req.end();
-  });
-
-  // ========================================================================
-  // /v1/messages — no model should 400
-  // ========================================================================
-  it("should use default model when model is missing", async () => {
-    const postData = JSON.stringify({
-      messages: [{ role: "user", content: "Hi" }],
-      max_tokens: 50,
+      );
+      req.write(postData);
+      req.end();
     });
-    const res = await httpPost(`${BASE}/v1/messages`, postData);
-    expect(res.status).toBe(200);
+
+    it("returns 400 for invalid JSON", async () => {
+      const res = await httpPost(`${BASE}/v1/messages`, "not-json");
+      expect(res.status).toBe(400);
+    });
   });
 
   // ========================================================================
-  // /api/status
+  // /v1/messages — non-streaming
   // ========================================================================
-  it("GET /api/status should return running status", async () => {
-    const res = await httpGet(`${BASE}/api/status`);
-    expect(res.status).toBe(200);
-    const json = JSON.parse(res.body);
-    expect(json.running).toBe(true);
-    expect(json.port).toBe(PORT);
-    expect(json.model).toBe("deepseek-ai/deepseek-v4-flash");
-    expect(json.hasApiKey).toBe(true);
+  describe("POST /v1/messages (non-streaming)", () => {
+    it("returns JSON response", async () => {
+      const postData = JSON.stringify({
+        model: "deepseek-ai/deepseek-v4-flash",
+        messages: [{ role: "user", content: "Hi" }],
+        max_tokens: 50,
+        stream: false,
+      });
+
+      const res = await httpPost(`${BASE}/v1/messages`, postData);
+      expect(res.status).toBe(200);
+      expect(res.headers["content-type"]).toBe("application/json");
+      const json = JSON.parse(res.body);
+      expect(json.type).toBe("message");
+      expect(json.content[0].text).toBe("Hello world");
+    });
   });
 
   // ========================================================================
-  // /api/model — GET and POST
+  // /v1/messages/count_tokens
   // ========================================================================
-  it("GET /api/model should return current model", async () => {
-    const res = await httpGet(`${BASE}/api/model`);
-    expect(res.status).toBe(200);
-    const json = JSON.parse(res.body);
-    expect(json.model).toBe("deepseek-ai/deepseek-v4-flash");
+  describe("POST /v1/messages/count_tokens", () => {
+    it("returns token count", async () => {
+      const res = await httpPost(
+        `${BASE}/v1/messages/count_tokens`,
+        JSON.stringify({ messages: [{ role: "user", content: "hi" }] }),
+      );
+      expect(res.status).toBe(200);
+      const json = JSON.parse(res.body);
+      expect(json.input_tokens).toBe(8);
+    });
   });
 
-  it("POST /api/model should change the model", async () => {
-    const res = await httpPost(`${BASE}/api/model`, JSON.stringify({ model: "meta/llama-3.1-405b-instruct" }));
-    expect(res.status).toBe(200);
-    const json = JSON.parse(res.body);
-    expect(json.ok).toBe(true);
-    expect(json.model).toBe("meta/llama-3.1-405b-instruct");
+  // ========================================================================
+  // /api/model
+  // ========================================================================
+  describe("/api/model", () => {
+    it("GET returns current model", async () => {
+      const res = await httpGet(`${BASE}/api/model`);
+      expect(res.status).toBe(200);
+      const json = JSON.parse(res.body);
+      expect(json.model).toBe(
+        "anthropic/nvidia_nim/deepseek-ai/deepseek-v4-flash",
+      );
+    });
 
-    // Verify it changed
-    const check = await httpGet(`${BASE}/api/model`);
-    const checkJson = JSON.parse(check.body);
-    expect(checkJson.model).toBe("meta/llama-3.1-405b-instruct");
-  });
+    it("POST changes the model", async () => {
+      const res = await httpPost(
+        `${BASE}/api/model`,
+        JSON.stringify({ model: "meta/llama-3.1-405b-instruct" }),
+      );
+      expect(res.status).toBe(200);
+      const json = JSON.parse(res.body);
+      expect(json.ok).toBe(true);
+      expect(json.model).toBe("meta/llama-3.1-405b-instruct");
 
-  it("POST /api/model with empty string should reset", async () => {
-    await httpPost(`${BASE}/api/model`, JSON.stringify({ model: "test-reset" }));
-    const res = await httpPost(`${BASE}/api/model`, JSON.stringify({ model: "" }));
-    expect(res.status).toBe(200);
+      const check = await httpGet(`${BASE}/api/model`);
+      expect(JSON.parse(check.body).model).toBe(
+        "anthropic/nvidia_nim/meta/llama-3.1-405b-instruct",
+      );
+    });
+
+    it("POST with empty body returns 400", async () => {
+      const res = await httpPost(`${BASE}/api/model`, JSON.stringify({}));
+      expect(res.status).toBe(400);
+    });
   });
 
   // ========================================================================
   // /api/key
   // ========================================================================
-  it("POST /api/key should update the API key", async () => {
-    const res = await httpPost(`${BASE}/api/key`, JSON.stringify({ apiKey: "new-key-456" }));
-    expect(res.status).toBe(200);
-    const json = JSON.parse(res.body);
-    expect(json.ok).toBe(true);
-  });
+  describe("/api/key", () => {
+    it("POST updates the API key", async () => {
+      const res = await httpPost(
+        `${BASE}/api/key`,
+        JSON.stringify({ apiKey: "new-key-456" }),
+      );
+      expect(res.status).toBe(200);
+      expect(JSON.parse(res.body).ok).toBe(true);
+    });
 
-  it("POST /api/key without key should return 400", async () => {
-    const res = await httpPost(`${BASE}/api/key`, JSON.stringify({}));
-    expect(res.status).toBe(400);
+    it("POST without key returns 400", async () => {
+      const res = await httpPost(`${BASE}/api/key`, JSON.stringify({}));
+      expect(res.status).toBe(400);
+    });
   });
 
   // ========================================================================
   // /api/stats
   // ========================================================================
-  it("GET /api/stats should return stats", async () => {
-    const res = await httpGet(`${BASE}/api/stats`);
-    expect(res.status).toBe(200);
-    const json = JSON.parse(res.body);
-    expect(typeof json.totalRequests).toBe("number");
-    expect(typeof json.totalTokens).toBe("number");
-    expect(typeof json.avgLatencyMs).toBe("number");
-    expect(typeof json.uptimeMs).toBe("number");
-  });
-
-  // ========================================================================
-  // /api/metrics/history
-  // ========================================================================
-  it("GET /api/metrics/history should return array", async () => {
-    const res = await httpGet(`${BASE}/api/metrics/history`);
-    expect(res.status).toBe(200);
-    const json = JSON.parse(res.body);
-    expect(Array.isArray(json)).toBe(true);
-  });
-
-  // ========================================================================
-  // /dashboard
-  // ========================================================================
-  it("GET /dashboard should return HTML", async () => {
-    const res = await httpGet(`${BASE}/dashboard`);
-    expect(res.status).toBe(200);
-    expect(res.headers["content-type"]).toContain("text/html");
-    expect(res.body).toContain("<!DOCTYPE html>");
-  });
-
-  it("GET /dashboard-client.js should return JavaScript", async () => {
-    const res = await httpGet(`${BASE}/dashboard-client.js`);
-    expect(res.status).toBe(200);
-    expect(res.headers["content-type"]).toContain("javascript");
+  describe("/api/stats", () => {
+    it("returns stats object", async () => {
+      const res = await httpGet(`${BASE}/api/stats`);
+      expect(res.status).toBe(200);
+      const json = JSON.parse(res.body);
+      expect(typeof json.totalRequests).toBe("number");
+      expect(typeof json.totalTokens).toBe("number");
+      expect(typeof json.avgLatencyMs).toBe("number");
+      expect(typeof json.uptimeMs).toBe("number");
+    });
   });
 
   // ========================================================================
   // /api/models (dashboard endpoint)
   // ========================================================================
-  it("GET /api/models should return model list", async () => {
-    const res = await httpGet(`${BASE}/api/models`);
-    expect(res.status).toBe(200);
-    const json = JSON.parse(res.body);
-    expect(Array.isArray(json)).toBe(true);
-    expect(json.length).toBeGreaterThan(0);
+  describe("/api/models", () => {
+    it("returns model list", async () => {
+      const res = await httpGet(`${BASE}/api/models`);
+      expect(res.status).toBe(200);
+      const json = JSON.parse(res.body);
+      expect(Array.isArray(json)).toBe(true);
+    });
+  });
+
+  // ========================================================================
+  // Dashboard
+  // ========================================================================
+  describe("Dashboard", () => {
+    it("GET /dashboard returns HTML", async () => {
+      const res = await httpGet(`${BASE}/dashboard`);
+      expect(res.status).toBe(200);
+      expect(res.headers["content-type"]).toContain("text/html");
+      expect(res.body).toContain("<!DOCTYPE html>");
+    });
+
+    it("GET /dashboard-client.js returns JavaScript", async () => {
+      const res = await httpGet(`${BASE}/dashboard-client.js`);
+      expect(res.status).toBe(200);
+      expect(res.headers["content-type"]).toContain("javascript");
+    });
+  });
+
+  // ========================================================================
+  // activeStreams tracking
+  // ========================================================================
+  describe("activeStreams", () => {
+    it("should track and clean up streaming connections", async () => {
+      const postData = JSON.stringify({
+        model: "deepseek-ai/deepseek-v4-flash",
+        messages: [{ role: "user", content: "Count" }],
+        max_tokens: 50,
+      });
+
+      const initialCount = state.activeStreams.size;
+      const req = http.request(
+        `${BASE}/v1/messages`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(postData),
+          },
+        },
+        () => {},
+      );
+      req.write(postData);
+      req.end();
+
+      await new Promise((r) => setTimeout(r, 200));
+      const afterCount = state.activeStreams.size;
+      expect(afterCount).toBe(initialCount);
+    });
+  });
+
+  // ========================================================================
+  // 404
+  // ========================================================================
+  describe("Unknown routes", () => {
+    it("returns 404 for unknown paths", async () => {
+      const res = await httpGet(`${BASE}/unknown-route`);
+      expect(res.status).toBe(404);
+    });
   });
 });

@@ -7,7 +7,14 @@ const prettierPlugin = require("eslint-plugin-prettier/recommended");
 
 module.exports = tsPlugin.config(
   {
-    ignores: ["out/", "dist/", "node_modules/", "**/*.js", "**/*.mjs", "src/dashboard-assets.ts"],
+    ignores: [
+      "out/",
+      "dist/",
+      "node_modules/",
+      "**/*.js",
+      "**/*.mjs",
+      "src/dashboard/dashboard-assets.ts",
+    ],
   },
   ...tsPlugin.configs.recommended,
   prettierConfig,
@@ -15,6 +22,15 @@ module.exports = tsPlugin.config(
   {
     rules: {
       "@typescript-eslint/no-require-imports": "warn",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
+      "@typescript-eslint/no-explicit-any": "warn",
+      "no-console": ["warn", { allow: ["warn", "error"] }],
+      "prefer-const": "error",
+      "no-var": "error",
+      eqeqeq: ["error", "always", { null: "ignore" }],
     },
   },
 );

@@ -7,6 +7,10 @@ on:
   push:
     tags: ["v*"]
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -28,14 +32,33 @@ jobs:
       - name: Compile TypeScript
         run: npm run compile
 
-      - name: Run tests
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
         run: npm test
 
       - name: Package VSIX
         run: npm run package:vsix
+
+      - name: Verify VSIX exists
+        run: |
+          ls -la *.vsix || { echo "No VSIX file found"; exit 1; }
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: "*.vsix"
           generate_release_notes: true
+
+      - name: Publish to VS Code Marketplace
+        if: env.VSCE_PAT != ''
+        run: npx vsce publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Open VSX Registry
+        if: env.OVSX_PAT != ''
+        run: npx ovsx publish *.vsix -p ${{ secrets.OVSX_PAT }}
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}

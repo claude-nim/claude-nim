@@ -3,7 +3,7 @@
 import {
   parseTextEmbeddedToolCalls,
   unwrapJsonCodeFence,
-} from "../src/tool-parser";
+} from "../src/translator/tool-parser";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 

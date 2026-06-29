@@ -8,6 +8,8 @@
 export class ReasoningStripper {
   private buffer = "";
   private insideThink = false;
+  /** Track cumulative non-whitespace text emitted to distinguish head reasoning from mid-content <think> */
+  private emittedTextLength = 0;
 
   process(chunk: string): string {
     this.buffer += chunk;
@@ -26,9 +28,19 @@ export class ReasoningStripper {
       } else {
         const startIndex = this.buffer.indexOf("<think>");
         if (startIndex !== -1) {
-          output += this.buffer.slice(0, startIndex);
-          this.insideThink = true;
-          this.buffer = this.buffer.slice(startIndex + 7);
+          // Heuristic: only treat <think> as reasoning if it appears early
+          // (before significant content has been emitted). If we've already
+          // emitted >200 non-whitespace chars, treat it as literal content.
+          const isLikelyReasoning = this.emittedTextLength < 200;
+          if (isLikelyReasoning) {
+            output += this.buffer.slice(0, startIndex);
+            this.insideThink = true;
+            this.buffer = this.buffer.slice(startIndex + 7);
+          } else {
+            // Emit as literal content
+            output += this.buffer.slice(0, startIndex + 7);
+            this.buffer = this.buffer.slice(startIndex + 7);
+          }
         } else {
           const possiblePartial = this.buffer.lastIndexOf("<");
           if (
@@ -44,6 +56,11 @@ export class ReasoningStripper {
           }
         }
       }
+    }
+
+    // Track emitted text length for heuristic
+    if (!this.insideThink) {
+      this.emittedTextLength += output.replace(/\s+/g, "").length;
     }
     return output;
   }

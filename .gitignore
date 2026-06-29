@@ -4,5 +4,11 @@ dist/
 *.js.map
 *.vsix
 .env
+.env.*
 test-*.js
 test-tty.js
+test-settings.json
+bun.lock
+.mimocode/
+AGENTS.md
+RULES.md

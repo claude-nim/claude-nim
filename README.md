@@ -3,21 +3,92 @@
   Licensed under the MIT License - see LICENSE for details
 -->
 
+<h1 align="center">Claude-NIM Proxy</h1>
+
 <p align="center">
-  <img src="images/Banner.jpeg" alt="Claude-NIM Proxy" width="100%">
+  <strong>Use 100+ NVIDIA NIM models with Claude Code</strong><br>
+  Translates Anthropic API to OpenAI-compatible format — zero config changes.
 </p>
 
-# Claude-NIM Proxy
+<p align="center">
+  <a href="https://marketplace.visualstudio.com/items?itemName=k-rithik04.claude-nim"><img src="https://img.shields.io/badge/VS%20Code-Marketplace-blue" alt="VS Code Marketplace"></a>
+  <a href="https://open-vsx.org/extension/k-rithik04/claude-nim"><img src="https://img.shields.io/badge/Open%20VSX-green" alt="Open VSX"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue" alt="License: MIT"></a>
+  <a href="https://www.npmjs.com/package/claude-nim"><img src="https://img.shields.io/npm/v/claude-nim" alt="npm version"></a>
+  <a href="https://github.com/claude-server/claude-nim"><img src="https://img.shields.io/badge/GitHub-claude--nim-181717" alt="GitHub"></a>
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
-[![VS Code](https://img.shields.io/badge/VS%20Code-1.80+-blue)](https://code.visualstudio.com/)
-[![npm version](https://img.shields.io/npm/v/claude-nim)](https://www.npmjs.com/package/claude-nim)
-[![npm downloads](https://img.shields.io/npm/dm/claude-nim)](https://www.npmjs.com/package/claude-nim)
-[![GitHub](https://img.shields.io/badge/GitHub-claude--nim-181717)](https://github.com/claude-server/claude-nim)
+---
 
-A VS Code extension that lets you use **NVIDIA NIM models** with **Claude Code** (and any Anthropic Messages API client).
+### CLI Menu
 
-It translates Anthropic Messages API requests into OpenAI-compatible requests for the NVIDIA NIM platform — no permanent config changes required.
+<p align="center">
+  <img src="images/assets/1.png" alt="Claude-NIM CLI main menu" width="70%">
+</p>
+
+### Model Family Selection
+
+<p align="center">
+  <img src="images/assets/2.png" alt="Model family selection" width="70%">
+</p>
+
+### Claude Code Running Through the Claude-NIM Proxy
+
+<p align="center">
+  <img src="images/assets/3.png" alt="Claude Code running through Claude-NIM proxy" width="70%">
+</p>
+
+### Claude Code Launched via Proxy with Session Stats
+
+<p align="center">
+  <img src="images/assets/4.png" alt="Proxy launching Claude Code terminal" width="70%">
+</p>
+
+### Claude Code Native /model Picker with FCC Gateway Models
+
+<p align="center">
+  <img src="images/assets/5.png" alt="Claude Code /model picker with gateway models" width="70%">
+</p>
+
+---
+
+---
+
+## Requirements
+
+- **VS Code** 1.80+
+- **NVIDIA NIM API key** — free at [build.nvidia.com](https://build.nvidia.com/)
+- **Claude Code CLI** — auto-installed on first use
+
+## Quick Start
+
+### VS Code Extension
+
+1. Install from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=k-rithik04.claude-nim) or Open VSX
+2. Run `Claude NIM Proxy: Manage NVIDIA NIM API Key` to set your key
+3. Run `Claude NIM Proxy: Launch Claude Code with Proxy` or press `Ctrl+Shift+Alt+N`
+
+### CLI (npm)
+
+```bash
+# Install globally
+npm install -g claude-nim
+
+# Run
+claude-nim                                # Interactive terminal UI
+claude-nim --model deepseek-ai/deepseek-r1  # Explicit model
+claude-nim --port 8080 --api-key nvapi-xxx  # Custom port + key
+claude-nim --serve-only --port 3456        # Proxy server only (no Claude Code)
+claude-nim --version                       # Show version
+claude-nim --help                          # All options
+```
+
+### CLI (bunx — no install)
+
+```bash
+bunx --yes claude-nim                    # Interactive setup
+bunx claude-nim --model deepseek-r1      # Explicit config
+```
 
 ## How It Works
 
@@ -26,269 +97,137 @@ Claude Code  ──→  Claude-NIM Proxy  ──→  NVIDIA NIM API
 (Anthropic API)   (localhost:3456)       (OpenAI-compatible)
 ```
 
-1. Install the VS Code extension and set your NVIDIA NIM API key
-2. Start the proxy from the VS Code status bar or command palette
-3. Use the "Launch Claude Code with Proxy" command to open a pre-configured terminal
-4. When you stop the proxy, everything reverts — zero permanent changes
-
-## Quick Start
-
-```bash
-# One command — installs, configures, and launches
-npx --yes claude-nim
-
-# Or install globally first
-npm install -g claude-nim
-claude-nim
-```
+1. Install the extension and set your API key
+2. Start the proxy from the status bar or command palette
+3. Launch Claude Code through the proxy
+4. Stop the proxy — everything reverts, zero permanent changes
 
 ## Why Claude-NIM Proxy?
 
-### Compared to CLI-only proxies (claude-code-proxy, CCProxy, LiteLLM)
+| | Claude-NIM Proxy | CLI Proxies | CCProxy | Claude Code Router |
+|---|---|---|---|---|
+| **VS Code integration** | Status bar, commands, SecretStorage, model browser | None | CLI only | None |
+| **Security** | Prompt injection scrubbing, context pruning, AES-256-GCM keys | None | None | None |
+| **Setup** | One command or extension install | Manual env vars + config files | Binary + config | `npm install` + `ccr start` |
+| **Model routing** | Gateway IDs, 100+ NIM catalog, `/model` picker | Generic passthrough | Generic | Generic |
+| **Language** | TypeScript, zero runtime deps | Python/Go | Go | Node.js + YAML |
+| **Tests** | 104+ unit tests + stress tests | Minimal | None public | Minimal |
+| **Live settings** | Port/timeout/cache apply without restart | Requires restart | Requires restart | Requires restart |
 
-| Feature | Claude-NIM Proxy | CLI Proxies (Python/Go) |
-|---------|-----------------|------------------------|
-| VS Code integration | Status bar, commands, SecretStorage | None — manual env vars |
-| One-click model selection | Browse 100+ NIM models in VS Code | Config file editing |
-| Encrypted API key storage | AES-256-GCM in VS Code SecretStorage | Plaintext env vars or config files |
-| Launch Claude Code | One command opens pre-configured terminal | Manual `export ANTHROPIC_BASE_URL=...` |
-| Zero-config onboarding | Interactive key prompt, auto-detection | Requires Python/pip/Go, manual setup |
-| Reactive settings | Port/timeout/cache changes apply live | Requires restart |
+## Features
 
-### Compared to Claude Code Router (26k stars)
+### Model Router & Gateway
 
-| Feature | Claude-NIM Proxy | Claude Code Router |
-|---------|-----------------|-------------------|
-| Setup | `npm install` + VS Code command | `npm install` + config.json + `ccr start` |
-| VS Code integration | Full (status bar, commands, model browser) | None |
-| Model-family adapters | 12 adapters fixing per-model quirks | Generic passthrough |
-| Security | Prompt injection scrubbing, context pruning, body limits | None |
-| Test coverage | 32 tests + 100-stream stress test | Minimal |
-| Language | TypeScript (zero runtime deps) | Node.js + YAML config |
-| Reasoning toggle | Control `<think>` visibility from VS Code | Not available |
+- **Gateway model IDs** — FCC-compliant `anthropic/nvidia_nim/<modelId>` format
+- **Native `/model` picker** — All NIM models appear in Claude Code's model selector
+- **Real-time switching** — Change models without restarting
+- **100+ models** — DeepSeek, Llama, Qwen, Mistral, Gemma, Phi, Nemotron, and more
 
-### Compared to CCProxy (Orchestre)
+### Full Anthropic Content Translation
 
-| Feature | Claude-NIM Proxy | CCProxy |
-|---------|-----------------|---------|
-| Language | TypeScript (zero deps besides jsonrepair) | Go (binary) |
-| VS Code integration | Full extension | CLI only |
-| Model adapters | 12 model-family adapters | Generic |
-| Security | Prompt injection defense, context pruning | None |
-| CLI mode | Standalone `npx claude-nim` with encrypted keys | Requires config file |
-| Test coverage | 32 tests + stress test | None public |
+| Content Type | Handling |
+|---|---|
+| `text` / `tool_use` / `tool_result` | Full conversion to OpenAI format |
+| Image (base64) | Converted to `image_url` data URI |
+| Mixed text + tools | Split into separate messages |
+| `system` prompt (string/array) | Converted to system message |
+| `tool_choice` (auto/any/tool) | Full mapping |
 
----
+### Security
 
-## What Makes This Different
+- **Prompt injection scrubbing** — Neutralizes `ignore previous instructions` patterns
+- **Context pruning** — Auto-trims large tool outputs (>100K chars)
+- **10 MB body limit** — Prevents memory exhaustion
+- **Unicode sanitization** — Strips encoding corruption characters
+- **Localhost-only binding** — Never exposed to network
 
-### 1. Model-Family Adapters (Unique)
+### VS Code Commands
 
-12 built-in adapters that fix per-model quirks so you don't have to:
-
-| Adapter | What it fixes |
-|---------|--------------|
-| **DeepSeek R1/V3** | Disables `tool_choice: any`, caps temperature 0.6 |
-| **Llama 3.x/4.x** | Caps temperature 0.7, enables structured JSON outputs |
-| **Qwen 2.5/3** | Caps temperature 0.7, sets stop tokens |
-| **Kimi K2.x** | Caps temperature 0.6 |
-| **Nemotron Ultra/Super** | Caps temperature 0.6, enforces max_tokens |
-| Mistral, Phi, Gemma, Command-R | Model-specific handling |
-
-**Why it matters:** Generic proxies pass through parameters unchanged, causing hallucinations, tool call failures, or crashes on incompatible models.
-
-### 2. Full Anthropic Content Type Translation
-
-| Content Type | Our Handling | Competitors |
+| Command | Shortcut | Description |
 |---|---|---|
-| `text` blocks | Direct mapping | Basic |
-| `tool_use` blocks | Converted to OpenAI `tool_calls` | Partial |
-| `tool_result` blocks | Converted with `tool_call_id` | Often broken |
-| **Image (base64)** | Converted to `image_url` data URI | Not handled |
-| Mixed text+tool results | Split into separate messages | Crashes |
-| `tool_result` with `is_error` | `[ERROR]` prefix preserved | Lost |
-| `system` prompt (string/array) | Converted to system message | Basic |
-| `tool_choice` (auto/any/tool) | Full mapping to OpenAI equivalents | `auto` only |
+| Toggle Proxy Server | `Ctrl+Shift+N` | Start or stop the proxy |
+| Launch Claude Code | `Ctrl+Shift+Alt+N` | Open pre-configured terminal |
+| Manage API Key | — | Set, update, or clear your key |
+| Select Default Model | — | Browse 100+ NIM models |
+| Toggle Debug Logging | — | Enable/disable debug output |
+| Toggle Show Reasoning | — | Show/hide `<think>` output |
 
-### 3. Security (Unique Among Proxies)
-
-No other proxy in the ecosystem includes:
-
-- **Prompt injection scrubbing** — Neutralizes `ignore previous instructions` and `you are now` patterns before they reach the model
-- **Context pruning** — Auto-trims large tool outputs (over 100K chars) to prevent context overflow
-- **10 MB request body limit** — Prevents memory exhaustion
-- **Unicode sanitization** — Strips U+FFFD replacement characters that cause encoding corruption
-- **Localhost-only binding** — Server never exposed to network
-
-### 4. VS Code Integration (Unique)
-
-No CLI-only proxy offers:
-
-- **Status bar** — Click to toggle proxy, shows running/stopped state with port
-- **API key management** — Stored in VS Code SecretStorage (never plaintext)
-- **Model browser** — Fetches 100+ NIM models, shows context windows, one-click selection
-- **One-click launch** — Opens a pre-configured terminal ready for Claude Code
-- **Reactive settings** — Port, timeout, cache TTL changes apply without restart
-- **Debug logging** — Toggle and view proxy logs from VS Code
-
-### 5. Standalone CLI
-
-```bash
-npx claude-nim                              # Interactive setup
-npx claude-nim --port 8080 --model deepseek-r1  # Explicit config
-```
-
-Features:
-- **AES-256-GCM encrypted key storage** — Machine-specific encryption key
-- **Dynamic port selection** — Falls back to ephemeral port if 3456 is busy
-- **Interactive onboarding** — Prompts for API key if not stored
-- **Claude auto-detection** — Checks if `claude` CLI is installed, offers to install
-- **Zombie-free teardown** — SIGINT/SIGTERM handlers kill all child processes
-
-### 6. 7-Layer Error Handling
-
-1. HTTP status mapping (AUTH_FAILED → 401, RATE_LIMITED → 429)
-2. SSE error events in the stream
-3. VS Code error notifications
-4. Retry with exponential backoff (respects `Retry-After` headers)
-5. Configurable stream idle timeout
-6. 10 MB body size limit
-7. JSON parse error messages with context
-
-### 7. Production-Ready Infrastructure
-
-- **Zero runtime dependencies** (except `jsonrepair`)
-- **32 real tests** including 100-concurrent-stream stress test
-- **TypeScript** with full type safety
-- **CI/CD** with GitHub Actions (build, lint, test, auto-package VSIX)
-- **Force-close connections** — Tracks and destroys all sockets on stop (no hanging)
-- **CORS support** — Works with browser-based clients
-
-## VS Code Commands
-
-| Command | Description |
-|---------|-------------|
-| `Claude NIM Proxy: Manage NVIDIA NIM API Key` | Set, update, or clear your API key |
-| `Claude NIM Proxy: Toggle Proxy Server` | Start or stop the proxy |
-| `Claude NIM Proxy: Toggle Debug Logging` | Enable/disable debug output |
-| `Claude NIM Proxy: Open Debug Log` | View proxy logs |
-| `Claude NIM Proxy: Select Default Model` | Browse and select a default NIM model |
-| `Claude NIM Proxy: Launch Claude Code with Proxy` | Open a terminal ready to use Claude Code |
-| `Claude NIM Proxy: Toggle Show Reasoning` | Show/hide model thinking (`<think>`) output |
-
-## Configuration
+### Configuration
 
 | Setting | Default | Description |
-|---------|---------|-------------|
-| `nvidia-nim.proxyPort` | `3456` | Port for the proxy server |
+|---|---|---|
+| `nvidia-nim.proxyPort` | `3456` | Proxy server port |
 | `nvidia-nim.defaultModel` | `""` | Default model (empty = require in request) |
 | `nvidia-nim.modelsCacheTTL` | `5` | Model cache TTL in minutes |
 | `nvidia-nim.requestTimeout` | `120` | Stream idle timeout in seconds |
 
-## Supported Models
+### Dashboard
 
-Any model available on [build.nvidia.com](https://build.nvidia.com), including:
+Open `http://127.0.0.1:3456/dashboard` for:
 
-- **DeepSeek** R1, V3, V4
-- **Llama** 3.x, 4.x
-- **Mistral** Large, Medium
-- **Qwen** 3, 2.5
-- **Kimi** K2.x
-- **Nemotron** Ultra, Super
-- **Gemma** 3
-- **Phi** 4
-- **Command-R**+
-- And 100+ more
-
-## Dynamic Model Switching
-
-Switch models on-the-fly without restarting the proxy or Claude Code.
-
-### From Claude Code's `/model` Command
-
-```
-/model deepseek-r1            # Switch to DeepSeek R1
-/model #3                     # Select model #3 from /models list
-/model                        # Show available models
-```
+- Real-time request visualization
+- Live stats (tokens, latency, throughput)
+- Model browser and switcher
+- Request history with filtering
+- Live log stream
 
 ### API Endpoints
 
 | Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/model` | GET | Get current model |
-| `/api/model` | POST | Set model (body: `{"model": "deepseek-r1"}`) |
-| `/api/models` | GET | List all available NIM models |
-| `/api/key` | POST | Update API key (body: `{"apiKey": "nvapi-..."}`) |
-| `/api/metrics` | GET | SSE stream of real-time request metrics |
-| `/api/metrics/history` | GET | Historical metrics (last 1000 requests) |
-| `/api/stats` | GET | Aggregate stats (total requests, tokens, latency) |
+|---|---|---|
+| `/api/model` | GET/POST | Get or set current model |
+| `/api/models` | GET | List available NIM models |
+| `/api/key` | POST | Update API key |
+| `/api/metrics` | GET | SSE stream of real-time metrics |
+| `/api/stats` | GET | Aggregate stats |
 
-### Persistence
+### Standalone CLI
 
-Model state and metrics persist across proxy restarts via `~/.claude-nim/`:
-- `state.json` — Current model, cache TTL
-- `metrics.jsonl` — Request history (auto-rotated at 2 MB)
-
-## Dashboard
-
-Open the dashboard in your browser:
-
-```
-http://127.0.0.1:3456/dashboard
+```bash
+claude-nim                                    # Interactive terminal UI
+claude-nim --model deepseek-ai/deepseek-r1    # Explicit model
+claude-nim --port 8080 --api-key nvapi-xxx    # Custom port + key
+claude-nim --serve-only --port 3456            # Proxy only (no Claude Code launch)
 ```
 
-Features:
-- **Real-time packet animation** — See requests flow between Claude Code ↔ Proxy ↔ NIM
-- **Live stats** — Request count, total tokens, average latency, peak tokens/sec, uptime
-- **Model selector** — Browse and switch between all available NIM models
-- **API key management** — Update your key without restarting
-- **Request history** — Table of all requests with model, token counts, latency, status
-- **Live logs** — Color-coded real-time proxy log stream
+Features: encrypted key storage, dynamic port selection, Claude auto-detection, zombie-free teardown. Requires [Bun](https://bun.sh) runtime.
 
-## `ANTHROPIC_CUSTOM_MODEL_OPTION`
+### Error Handling
 
-The proxy injects the `ANTHROPIC_CUSTOM_MODEL_OPTION` environment variable when launching Claude Code, which makes all NIM models appear in Claude Code's native model picker.
+1. HTTP status mapping (401, 429, 503)
+2. SSE error events in stream
+3. VS Code error notifications
+4. Exponential backoff retry with `Retry-After` support
+5. Configurable stream idle timeout
+6. 10 MB body size limit
+7. JSON parse error messages with context
 
-Without this env var, Claude Code filters models to only show ones matching `/^(claude|anthropic)/i`. The custom option bypasses this filter.
+## Supported Models
 
-```json
-// Example ANTHROPIC_CUSTOM_MODEL_OPTION value
-[
-  {"value":"deepseek-r1","label":"DeepSeek R1","description":"via NVIDIA NIM"},
-  {"value":"meta/llama-3.3-70b-instruct","label":"Llama 3.3 70B","description":"via NVIDIA NIM"}
-]
-```
+Any model on [build.nvidia.com](https://build.nvidia.com):
 
-This is set automatically when using "Launch Claude Code with Proxy" or the `npx claude-nim` CLI.
-
-## Limitations
-
-- **Claude Code's native model picker** shows NIM models only when launched via this proxy's terminal/CLI (requires `ANTHROPIC_CUSTOM_MODEL_OPTION`)
-- **Tool use** works for models that support it (DeepSeek R1, Llama 3.x/4x, etc.) — unsupported models may produce malformed tool calls
-- **Streaming** requires the model to support SSE; some older NIM models may not stream correctly
-- **Max tokens** is capped at 16K for most models; some support up to 32K
-- **Images** are sent as base64 data URIs — the model must support vision
-- **Rate limiting** is handled by retry with backoff, but aggressive usage may hit NIM quotas
-- **Reasoning/thinking** toggle only affects display; the model still generates reasoning tokens
+DeepSeek R1/V3/V4, Llama 3.x/4.x, Mistral Large/Medium, Qwen 3/2.5, Kimi K2.x, Nemotron Ultra/Super, Gemma 3, Phi 4, Command-R+, and 100+ more.
 
 ## Build
 
 ```bash
-npm install
-npm run compile       # Compile TypeScript → out/
-npm run test          # Run 32 tests
-npm run lint          # ESLint check
-npm run package:vsix  # Package as .vsix
+bun install
+bun run compile         # Build → out/
+bun run test            # 104+ unit tests
+bun run lint            # ESLint
+bun run package:vsix    # Package VS Code extension
+bun run build:exe:win   # Windows standalone binary
+bun run build:exe:linux # Linux standalone binary
+bun run build:exe:mac   # macOS standalone binary
 ```
 
 ## Contributing
 
-Contributions are welcome. Please open an issue or submit a pull request at [github.com/claude-server/claude-nim](https://github.com/claude-server/claude-nim).
+Issues and PRs welcome at [github.com/claude-server/claude-nim](https://github.com/claude-server/claude-nim).
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE).
 
 ## Author
 
